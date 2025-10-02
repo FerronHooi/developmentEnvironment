@@ -3,8 +3,8 @@
 # This script automatically finds its own location, so you can move DevContainerTemplates anywhere
 
 param(
-    [Parameter(Mandatory=$true, Position=0)]
-    [string]$ProjectPath,
+    [Parameter(Mandatory=$false, Position=0)]
+    [string]$ProjectPath = "",
 
     [Parameter(Mandatory=$false)]
     [ValidateSet("full", "minimal", "data-science", "web", "custom")]
@@ -16,21 +16,40 @@ param(
     [switch]$Help = $false
 )
 
-# Show help if requested
-if ($Help) {
+# Error handler to keep window open
+trap {
+    Write-Host ""
+    Write-Host "Error occurred: $_" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit 1
+}
+
+# Show help if requested or no project path provided
+if ($Help -or [string]::IsNullOrWhiteSpace($ProjectPath)) {
     Write-Host ""
     Write-Host "DevEnv - DevContainer Environment Setup" -ForegroundColor Cyan
     Write-Host "=======================================" -ForegroundColor Cyan
     Write-Host ""
+
+    if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+        Write-Host "ERROR: No project path specified!" -ForegroundColor Red
+        Write-Host ""
+    }
+
     Write-Host "Usage:" -ForegroundColor Yellow
     Write-Host "  devenv <ProjectPath> [options]" -ForegroundColor White
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Yellow
-    Write-Host "  devenv `"C:\MyProject`"" -ForegroundColor White
-    Write-Host "  devenv `".`"                       # Current directory" -ForegroundColor White
-    Write-Host "  devenv `"C:\MyProject`" -Profile minimal" -ForegroundColor White
-    Write-Host "  devenv `"C:\MyProject`" -Open     # Opens VS Code after" -ForegroundColor White
-    Write-Host "  devenv `"C:\MyProject`" -Force    # Overwrites existing" -ForegroundColor White
+    Write-Host "  devenv C:\MyProject" -ForegroundColor White
+    Write-Host "  devenv ." -ForegroundColor Gray -NoNewline
+    Write-Host "                       # Current directory" -ForegroundColor DarkGray
+    Write-Host "  devenv C:\MyProject -Profile minimal" -ForegroundColor White
+    Write-Host "  devenv C:\MyProject -Open" -ForegroundColor Gray -NoNewline
+    Write-Host "     # Opens VS Code after" -ForegroundColor DarkGray
+    Write-Host "  devenv C:\MyProject -Force" -ForegroundColor Gray -NoNewline
+    Write-Host "    # Overwrites existing" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Profiles:" -ForegroundColor Yellow
     Write-Host "  full         - All 45+ extensions (default)" -ForegroundColor White
@@ -39,7 +58,23 @@ if ($Help) {
     Write-Host "  web          - Node.js, React, API development" -ForegroundColor White
     Write-Host "  custom       - Define your own" -ForegroundColor White
     Write-Host ""
-    exit 0
+
+    # Interactive mode if no path provided
+    if ([string]::IsNullOrWhiteSpace($ProjectPath) -and -not $Help) {
+        Write-Host "Enter project path or press Enter to exit:" -ForegroundColor Yellow
+        $inputPath = Read-Host "Project Path"
+
+        if ([string]::IsNullOrWhiteSpace($inputPath)) {
+            Write-Host "Exiting..." -ForegroundColor Gray
+            exit 0
+        }
+
+        $ProjectPath = $inputPath
+    } else {
+        Write-Host "Press any key to exit..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        exit 0
+    }
 }
 
 # Get the directory where this script is located
@@ -48,20 +83,44 @@ $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Find the template directory (relative to script location)
 $TEMPLATE_PATH = Join-Path $SCRIPT_DIR "base-template"
 
+# Remove any quotes from the project path
+$ProjectPath = $ProjectPath.Trim('"', "'")
+
 # Resolve project path (handle relative paths and ".")
 if ($ProjectPath -eq ".") {
     $ProjectPath = Get-Location
 } else {
-    $ProjectPath = Resolve-Path $ProjectPath -ErrorAction SilentlyContinue
-    if (-not $ProjectPath) {
-        # If path doesn't exist, try to create it
-        $response = Read-Host "Project path doesn't exist. Create it? (Y/N)"
+    # Try to resolve the path
+    $resolvedPath = $null
+    try {
+        $resolvedPath = Resolve-Path $ProjectPath -ErrorAction SilentlyContinue
+    } catch {
+        # Path doesn't exist yet
+    }
+
+    if ($resolvedPath) {
+        $ProjectPath = $resolvedPath
+    } else {
+        # Path doesn't exist, ask to create
+        Write-Host ""
+        Write-Host "Project path doesn't exist: $ProjectPath" -ForegroundColor Yellow
+        $response = Read-Host "Create it? (Y/N)"
         if ($response -eq 'Y' -or $response -eq 'y') {
-            New-Item -ItemType Directory -Path $ProjectPath -Force | Out-Null
-            $ProjectPath = Resolve-Path $ProjectPath
+            try {
+                New-Item -ItemType Directory -Path $ProjectPath -Force | Out-Null
+                $ProjectPath = Resolve-Path $ProjectPath
+                Write-Host "Created: $ProjectPath" -ForegroundColor Green
+            } catch {
+                Write-Host "Failed to create directory: $_" -ForegroundColor Red
+                Write-Host "Press any key to exit..."
+                $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                exit 1
+            }
         } else {
-            Write-Host "✗ Project path not found: $ProjectPath" -ForegroundColor Red
-            exit 1
+            Write-Host "Cancelled" -ForegroundColor Yellow
+            Write-Host "Press any key to exit..."
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            exit 0
         }
     }
 }
@@ -71,23 +130,33 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  DevEnv - Quick Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "📁 Project: $ProjectPath" -ForegroundColor White
-Write-Host "📦 Template: $TEMPLATE_PATH" -ForegroundColor Gray
-Write-Host "🎨 Profile: $Profile" -ForegroundColor Gray
+Write-Host "[Project] $ProjectPath" -ForegroundColor White
+Write-Host "[Template] $TEMPLATE_PATH" -ForegroundColor Gray
+Write-Host "[Profile] $Profile" -ForegroundColor Gray
 Write-Host ""
 
 # Check if template exists
 if (-not (Test-Path $TEMPLATE_PATH)) {
-    Write-Host "✗ Template not found at: $TEMPLATE_PATH" -ForegroundColor Red
+    Write-Host "ERROR: Template not found at: $TEMPLATE_PATH" -ForegroundColor Red
     Write-Host "  This script must be in the DevContainerTemplates folder" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Current directory: $SCRIPT_DIR" -ForegroundColor Gray
+    Write-Host "Looking for: base-template" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Press any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit 1
 }
 
 # Check if .devcontainer already exists
 $targetDevContainer = Join-Path $ProjectPath ".devcontainer"
 if ((Test-Path $targetDevContainer) -and -not $Force) {
-    Write-Host "⚠ .devcontainer already exists!" -ForegroundColor Yellow
-    $response = Read-Host "Overwrite? (Y/N/B for backup)"
+    Write-Host "WARNING: .devcontainer already exists!" -ForegroundColor Yellow
+    Write-Host "Options:" -ForegroundColor White
+    Write-Host "  Y - Overwrite (delete existing)" -ForegroundColor White
+    Write-Host "  B - Backup existing and continue" -ForegroundColor White
+    Write-Host "  N - Cancel" -ForegroundColor White
+    $response = Read-Host "Choice (Y/B/N)"
 
     switch ($response.ToUpper()) {
         'Y' {
@@ -95,12 +164,15 @@ if ((Test-Path $targetDevContainer) -and -not $Force) {
             Write-Host "  Removed existing .devcontainer" -ForegroundColor Yellow
         }
         'B' {
-            $backupPath = "$targetDevContainer.backup.$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+            $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+            $backupPath = "$targetDevContainer.backup.$timestamp"
             Move-Item $targetDevContainer $backupPath
-            Write-Host "  ✓ Backed up to: $(Split-Path -Leaf $backupPath)" -ForegroundColor Green
+            Write-Host "  Backed up to: $(Split-Path -Leaf $backupPath)" -ForegroundColor Green
         }
         default {
             Write-Host "  Cancelled" -ForegroundColor Yellow
+            Write-Host "Press any key to exit..."
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
             exit 0
         }
     }
@@ -120,18 +192,31 @@ $files = @(
     "capture-current-state.ps1"
 )
 
+$copiedCount = 0
 foreach ($file in $files) {
-    $source = Join-Path $TEMPLATE_PATH ".devcontainer" $file
-    $dest = Join-Path $targetDevContainer $file
+    $source = Join-Path -Path $TEMPLATE_PATH -ChildPath ".devcontainer\$file"
+    $dest = Join-Path -Path $targetDevContainer -ChildPath $file
 
-    if (Test-Path $source) {
-        Copy-Item $source $dest -Force
-        Write-Host "  ✓ $file" -ForegroundColor Green
+    if (Test-Path -Path $source) {
+        try {
+            Copy-Item -Path $source -Destination $dest -Force
+            Write-Host "  + $file" -ForegroundColor Green
+            $copiedCount++
+        } catch {
+            Write-Host "  ! Error copying $file : $_" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "  - $file (not found)" -ForegroundColor Yellow
     }
 }
 
+Write-Host "  Copied $copiedCount files" -ForegroundColor Cyan
+
 # Apply extension profile
 if ($Profile -ne "full") {
+    Write-Host ""
+    Write-Host "Applying profile: $Profile" -ForegroundColor Yellow
+
     $devContainerJson = Join-Path $targetDevContainer "devcontainer.json"
     $config = Get-Content $devContainerJson -Raw | ConvertFrom-Json
 
@@ -166,9 +251,11 @@ if ($Profile -ne "full") {
         default { $config.customizations.vscode.extensions }
     }
 
-    $config.customizations.vscode.extensions = $extensions
-    $config | ConvertTo-Json -Depth 10 | Out-File $devContainerJson -Encoding UTF8
-    Write-Host "  ✓ Applied $Profile profile" -ForegroundColor Green
+    if ($Profile -ne "custom") {
+        $config.customizations.vscode.extensions = $extensions
+        $config | ConvertTo-Json -Depth 10 | Out-File $devContainerJson -Encoding UTF8
+        Write-Host "  Applied $($extensions.Count) extensions" -ForegroundColor Green
+    }
 }
 
 # Create .env file
@@ -197,54 +284,58 @@ if ($CreateEnv) {
             } catch {}
 
             $envContent | Out-File $envPath -Encoding UTF8
-            Write-Host "  ✓ Created .env file" -ForegroundColor Green
+            Write-Host "  + .env file created" -ForegroundColor Green
         }
     } else {
-        Write-Host "  ℹ .env exists (kept existing)" -ForegroundColor Gray
+        Write-Host "  = .env exists (kept)" -ForegroundColor Gray
     }
 }
 
 # Quick analysis
 Write-Host ""
 Write-Host "Project Analysis:" -ForegroundColor Cyan
-$characteristics = @()
 
 if (Test-Path (Join-Path $ProjectPath "requirements.txt")) {
-    $characteristics += "🐍 Python (requirements.txt)"
+    Write-Host "  * Python project (requirements.txt)" -ForegroundColor White
 }
 if (Test-Path (Join-Path $ProjectPath "package.json")) {
-    $characteristics += "📦 Node.js (package.json)"
+    Write-Host "  * Node.js project (package.json)" -ForegroundColor White
 }
 if (Test-Path (Join-Path $ProjectPath "databricks.yml")) {
-    $characteristics += "🔥 Databricks"
+    Write-Host "  * Databricks project" -ForegroundColor White
 }
 if (Test-Path (Join-Path $ProjectPath ".git")) {
-    $characteristics += "📚 Git repository"
-}
-
-if ($characteristics.Count -gt 0) {
-    foreach ($char in $characteristics) {
-        Write-Host "  $char" -ForegroundColor White
-    }
-} else {
-    Write-Host "  📁 Empty project" -ForegroundColor Gray
+    Write-Host "  * Git repository" -ForegroundColor White
 }
 
 # Success message
 Write-Host ""
-Write-Host "✅ DevContainer deployed successfully!" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Green
+Write-Host "  SUCCESS: DevContainer deployed!" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
-# Open VS Code if requested
+# Next steps
+Write-Host "Next steps:" -ForegroundColor Cyan
+
 if ($Open) {
-    Write-Host "Opening in VS Code..." -ForegroundColor Cyan
+    Write-Host "  Opening VS Code..." -ForegroundColor Yellow
     code $ProjectPath
+    Write-Host "  1. Wait for VS Code to open" -ForegroundColor White
+    Write-Host "  2. Press Ctrl+Shift+P" -ForegroundColor White
+    Write-Host "  3. Run: Dev Containers: Reopen in Container" -ForegroundColor White
 } else {
-    Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "  1. cd `"$ProjectPath`"" -ForegroundColor White
-    Write-Host "  2. code ." -ForegroundColor White
-    Write-Host "  3. Reopen in Container (Ctrl+Shift+P)" -ForegroundColor White
+    Write-Host "  1. Open VS Code:" -ForegroundColor White
+    Write-Host "     code `"$ProjectPath`"" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  2. Reopen in Container:" -ForegroundColor White
+    Write-Host "     Ctrl+Shift+P -> Dev Containers: Reopen in Container" -ForegroundColor Gray
 }
 
 Write-Host ""
-Write-Host "💡 Tip: Edit .devcontainer/.env for credentials" -ForegroundColor Gray
+Write-Host "  3. Configure credentials:" -ForegroundColor White
+Write-Host "     Edit: .devcontainer\.env" -ForegroundColor Gray
+
+Write-Host ""
+Write-Host "Press any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

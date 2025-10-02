@@ -16,6 +16,11 @@ desktop.ini
 *.swp
 *.swo
 *~
+.vscode/
+.claude/
+
+# DevContainer (if someone accidentally creates one here)
+.devcontainer/
 
 # Logs
 *.log

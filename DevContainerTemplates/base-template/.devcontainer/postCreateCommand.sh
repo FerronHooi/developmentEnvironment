@@ -5,6 +5,14 @@
 
 set -e
 
+# Load environment variables from .env file if it exists
+if [ -f ".devcontainer/.env" ]; then
+    echo "Loading environment variables from .env file..."
+    set -a
+    source .devcontainer/.env
+    set +a
+fi
+
 echo "================================================"
 echo "  Running Post-Create Setup"
 echo "  Project: ${PROJECT_NAME:-$(basename $(pwd))}"

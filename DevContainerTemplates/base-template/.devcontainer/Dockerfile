@@ -68,7 +68,6 @@ ENV LC_ALL=en_US.UTF-8
 ARG NODE_VERSION
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g npm@latest \
     && rm -rf /var/lib/apt/lists/*
 
 # Install global Node.js packages
@@ -257,53 +256,22 @@ RUN git config --global init.defaultBranch main && \
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended || true
 
 # Setup bash aliases
-RUN cat >> ~/.bashrc << 'EOF'
-
-# Custom aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
-alias gs='git status'
-alias gd='git diff'
-alias gl='git log --oneline --graph --decorate'
-alias gp='git pull'
-alias gpu='git push'
-alias gco='git checkout'
-alias gcm='git commit -m'
-alias dc='docker-compose'
-alias k='kubectl'
-alias tf='terraform'
-alias python='python3'
-alias pip='pip3'
-alias cls='clear'
-
-# Custom functions
-mkcd() { mkdir -p "$1" && cd "$1"; }
-extract() {
-    if [ -f "$1" ]; then
-        case "$1" in
-            *.tar.bz2) tar xjf "$1" ;;
-            *.tar.gz) tar xzf "$1" ;;
-            *.bz2) bunzip2 "$1" ;;
-            *.gz) gunzip "$1" ;;
-            *.tar) tar xf "$1" ;;
-            *.zip) unzip "$1" ;;
-            *.Z) uncompress "$1" ;;
-            *) echo "'$1' cannot be extracted" ;;
-        esac
-    else
-        echo "'$1' is not a valid file"
-    fi
-}
-
-# Environment info on login
-echo "==================================="
-echo "Development Container Ready!"
-echo "Python: $(python --version 2>&1)"
-echo "Node: $(node --version 2>&1)"
-echo "Project: ${PROJECT_NAME:-Not Set}"
-echo "==================================="
-EOF
+RUN echo 'alias ll="ls -alF"' >> ~/.bashrc && \
+    echo 'alias la="ls -A"' >> ~/.bashrc && \
+    echo 'alias l="ls -CF"' >> ~/.bashrc && \
+    echo 'alias gs="git status"' >> ~/.bashrc && \
+    echo 'alias gd="git diff"' >> ~/.bashrc && \
+    echo 'alias gl="git log --oneline --graph --decorate"' >> ~/.bashrc && \
+    echo 'alias gp="git pull"' >> ~/.bashrc && \
+    echo 'alias gpu="git push"' >> ~/.bashrc && \
+    echo 'alias gco="git checkout"' >> ~/.bashrc && \
+    echo 'alias gcm="git commit -m"' >> ~/.bashrc && \
+    echo 'alias dc="docker-compose"' >> ~/.bashrc && \
+    echo 'alias k="kubectl"' >> ~/.bashrc && \
+    echo 'alias tf="terraform"' >> ~/.bashrc && \
+    echo 'alias python="python3"' >> ~/.bashrc && \
+    echo 'alias pip="pip3"' >> ~/.bashrc && \
+    echo 'alias cls="clear"' >> ~/.bashrc
 
 # Set environment variables
 ENV PYTHONPATH=/workspace:$PYTHONPATH
