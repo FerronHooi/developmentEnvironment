@@ -61,6 +61,15 @@ setup_git() {
     # Setup credential helper
     git config --global credential.helper store
 
+    # Mark workspace as safe directory to avoid ownership issues
+    git config --global --add safe.directory /workspace
+    git config --global --add safe.directory /workspace/project
+    git config --global --add safe.directory '*'
+
+    # Configure line endings for Windows/Linux compatibility
+    git config --global core.autocrlf input
+    git config --global core.eol lf
+
     # Set up Git user if not configured
     if [ -z "$(git config --global user.email)" ]; then
         if [ -n "${GIT_USER_EMAIL}" ]; then

@@ -212,6 +212,77 @@ foreach ($file in $files) {
 
 Write-Host "  Copied $copiedCount files" -ForegroundColor Cyan
 
+# Copy .gitattributes to project root to fix line ending issues
+$gitAttributesSource = Join-Path -Path $TEMPLATE_PATH -ChildPath "project.gitattributes"
+$gitAttributesDest = Join-Path -Path $ProjectPath -ChildPath ".gitattributes"
+
+if (Test-Path -Path $gitAttributesSource) {
+    if (Test-Path -Path $gitAttributesDest) {
+        Write-Host ""
+        Write-Host "WARNING: .gitattributes already exists in project root" -ForegroundColor Yellow
+        Write-Host "  Keeping existing file (to preserve custom settings)" -ForegroundColor Gray
+    } else {
+        try {
+            Copy-Item -Path $gitAttributesSource -Destination $gitAttributesDest -Force
+            Write-Host ""
+            Write-Host "Git line ending fixes:" -ForegroundColor Yellow
+            Write-Host "  + .gitattributes copied to project root" -ForegroundColor Green
+            Write-Host "  This ensures consistent line endings between Windows/Linux" -ForegroundColor Gray
+        } catch {
+            Write-Host "  ! Error copying .gitattributes: $_" -ForegroundColor Red
+        }
+    }
+}
+
+# Update project's .gitignore to exclude .devcontainer, .vscode, and .gitattributes
+$gitignorePath = Join-Path -Path $ProjectPath -ChildPath ".gitignore"
+$gitignoreEntries = @(
+    "",
+    "# DevContainer and IDE files (auto-added by devenv)",
+    ".devcontainer/",
+    ".vscode/",
+    ".gitattributes"
+)
+
+if (Test-Path -Path $gitignorePath) {
+    # Read existing .gitignore
+    $existingContent = Get-Content -Path $gitignorePath -Raw
+
+    # Check if entries already exist
+    $needsUpdate = $false
+    $entriesToAdd = @()
+
+    if ($existingContent -notmatch '\.devcontainer/?') {
+        $needsUpdate = $true
+    }
+    if ($existingContent -notmatch '\.vscode/?') {
+        $needsUpdate = $true
+    }
+    if ($existingContent -notmatch '\.gitattributes') {
+        $needsUpdate = $true
+    }
+
+    if ($needsUpdate) {
+        # Add entries to existing .gitignore
+        $gitignoreEntries | Out-File -FilePath $gitignorePath -Append -Encoding UTF8
+        Write-Host ""
+        Write-Host "Updated .gitignore:" -ForegroundColor Yellow
+        Write-Host "  + Added .devcontainer/" -ForegroundColor Green
+        Write-Host "  + Added .vscode/" -ForegroundColor Green
+        Write-Host "  + Added .gitattributes" -ForegroundColor Green
+    } else {
+        Write-Host "  = .gitignore already has DevContainer entries" -ForegroundColor Gray
+    }
+} else {
+    # Create new .gitignore with entries
+    $gitignoreEntries | Out-File -FilePath $gitignorePath -Encoding UTF8
+    Write-Host ""
+    Write-Host "Created .gitignore:" -ForegroundColor Yellow
+    Write-Host "  + .devcontainer/" -ForegroundColor Green
+    Write-Host "  + .vscode/" -ForegroundColor Green
+    Write-Host "  + .gitattributes" -ForegroundColor Green
+}
+
 # Apply extension profile
 if ($Profile -ne "full") {
     Write-Host ""

@@ -277,7 +277,7 @@ RUN echo 'alias ll="ls -alF"' >> ~/.bashrc && \
     echo 'alias cls="clear"' >> ~/.bashrc
 
 # Set environment variables
-ENV PYTHONPATH=/workspace:$PYTHONPATH
+ENV PYTHONPATH=/workspace:${PYTHONPATH:-}
 ENV PATH=/home/$USERNAME/.local/bin:$PATH
 ENV SHELL=/bin/bash
 

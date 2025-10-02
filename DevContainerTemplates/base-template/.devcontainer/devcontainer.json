@@ -70,63 +70,81 @@
         "azure.tenant": "${env:AZURE_TENANT_ID}",
         "azure.subscriptionId": "${env:AZURE_SUBSCRIPTION_ID}"
       },
-      // Extensions to install in the container
+      // Extensions to install in the container (63 total)
       "extensions": [
-        // === Data & Analytics Extensions ===
+        // === Data & Analytics Extensions (14) ===
         "analysis-services.tmdl",
         "databricks.databricks",
+        "databricks.sqltools-databricks-driver",
+        "dvirtz.parquet-viewer",
         "fabric.vscode-fabric",
         "gerhardbrueckl.fabricstudio",
         "gerhardbrueckl.onelake-vscode",
         "gerhardbrueckl.powerbi-vscode",
         "gerhardbrueckl.powerbi-vscode-extensionpack",
+        "grapecity.gc-excelviewer",
         "jianfajun.dax-language",
-        "dvirtz.parquet-viewer",
+        "qwtel.sqlite-viewer",
+        "randomfractalsinc.duckdb-sql-tools",
         "randomfractalsinc.vscode-data-table",
-        // === Python Development ===
+        // === Database & SQL Tools (1) ===
+        "mtxr.sqltools",
+        // === Python Development (4) ===
+        "ms-python.debugpy",
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.debugpy",
         "ms-python.vscode-python-envs",
-        // === Jupyter & Notebooks ===
+        // === Jupyter & Notebooks (6) ===
+        "ms-toolsai.datawrangler",
         "ms-toolsai.jupyter",
         "ms-toolsai.jupyter-keymap",
         "ms-toolsai.jupyter-renderers",
         "ms-toolsai.vscode-jupyter-cell-tags",
         "ms-toolsai.vscode-jupyter-slideshow",
-        // === Azure & Cloud Development ===
+        // === Azure & Cloud Development (7) ===
         "ms-azure-devops.azure-pipelines",
+        "ms-azuretools.vscode-azure-github-copilot",
+        "ms-azuretools.vscode-azure-mcp-server",
         "ms-azuretools.vscode-azureresourcegroups",
         "ms-azuretools.vscode-azurestorage",
         "ms-vscode.azure-repos",
-        // === Docker & Containers ===
+        "upstash.context7-mcp",
+        // === Docker & Containers (3) ===
+        "ms-azuretools.vscode-containers",
         "ms-azuretools.vscode-docker",
         "ms-vscode-remote.remote-containers",
-        "ms-azuretools.vscode-containers",
-        // === Git & Version Control ===
+        // === Git & Version Control (7) ===
         "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "github.remotehub",
         "mhutchie.git-graph",
         "michelemelluso.gitignore",
-        "shaharkazaz.git-merger",
-        "github.remotehub",
         "ms-vscode.remote-repositories",
-        // === AI & Code Assistants ===
+        "shaharkazaz.git-merger",
+        // === AI & Code Assistants (3) ===
         "anthropic.claude-code",
         "github.copilot",
         "github.copilot-chat",
-        // === Editor Enhancements ===
+        // === API Testing & Development (2) ===
+        "postman.postman-for-vscode",
+        "rangav.vscode-thunder-client",
+        // === Editor Enhancements (11) ===
         "bierner.markdown-mermaid",
+        "dineug.vuerd-vscode",
+        "dionmunk.vscode-notes",
         "hediet.vscode-drawio",
         "janisdd.vscode-edit-csv",
+        "oderwat.indent-rainbow",
+        "redhat.vscode-yaml",
+        "serkonda7.vscode-vba",
         "wayou.vscode-todo-highlight",
         "zainchen.json",
-        "redhat.vscode-yaml",
-        // === JetBrains Theme & Keybindings ===
+        // === JetBrains Theme & Keybindings (4) ===
+        "asrepairs.jetbrains-version-control",
         "chadalen.vscode-jetbrains-icon-theme",
         "edwinsulaiman.jetbrains-rider-dark-theme",
         "isudox.vscode-jetbrains-keybindings",
-        "asrepairs.jetbrains-version-control",
-        // === Terminal & PowerShell ===
+        // === Terminal & PowerShell (2) ===
         "docter60.vscode-terminal-for-ubuntu",
         "ms-vscode.powershell"
       ]
@@ -169,9 +187,9 @@
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
     // === Cache Volumes for Performance ===
-    "source=vscode-extensions-${localWorkspaceFolderBasename},target=/home/vscode/.vscode-server/extensions,type=volume",
-    "source=pip-cache-${localWorkspaceFolderBasename},target=/home/vscode/.cache/pip,type=volume",
-    "source=npm-cache-${localWorkspaceFolderBasename},target=/home/vscode/.npm,type=volume"
+    "source=vscode-extensions,target=/home/vscode/.vscode-server/extensions,type=volume",
+    "source=pip-cache,target=/home/vscode/.cache/pip,type=volume",
+    "source=npm-cache,target=/home/vscode/.npm,type=volume"
     // === Optional: Shared data directory ===
     // "source=${localEnv:DATA_PATH:${localWorkspaceFolder}/data},target=/data,type=bind,consistency=cached"
   ],
