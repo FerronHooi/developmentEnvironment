@@ -1,0 +1,32 @@
+# Test deployments
+test-projects/
+temp/
+
+# Local configurations
+local-config.json
+*.local.*
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Backup files
+*.backup.*
+*.bak
+
+# Don't ignore .env.example (it's a template)
+!.env.example
+
+# But ignore actual .env files
+.env
+.env.local
