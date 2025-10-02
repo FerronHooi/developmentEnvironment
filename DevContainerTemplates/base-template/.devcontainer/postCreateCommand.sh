@@ -8,9 +8,17 @@ set -e
 # Load environment variables from .env file if it exists
 if [ -f ".devcontainer/.env" ]; then
     echo "Loading environment variables from .env file..."
-    set -a
-    source .devcontainer/.env
-    set +a
+    # Use export to load env vars, skipping comments and empty lines
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        if [[ ! "$key" =~ ^[[:space:]]*# ]] && [[ -n "$key" ]]; then
+            # Remove leading/trailing whitespace
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            # Export the variable
+            export "$key=$value"
+        fi
+    done < ".devcontainer/.env"
 fi
 
 echo "================================================"
@@ -89,21 +97,92 @@ setup_git() {
         fi
     fi
 
-    # Fix Git index if files appear as modified due to container filesystem differences
+    # Fix Git index if files appear as modified due to line ending differences
     if [ -d ".git" ]; then
-        log_info "Checking Git repository status..."
-        
-        # Check if there are any changes that might be filesystem artifacts
-        if git status --porcelain | grep -q "^.M"; then
-            log_info "Detected filesystem-related Git changes, cleaning up..."
-            
-            # Reset any staged changes and refresh the index
-            git add -A 2>/dev/null || true
-            git reset --hard HEAD 2>/dev/null || true
-            
-            log_info "Git repository status cleaned up"
+        log_info "Fixing Git line ending issues..."
+
+        # First, ensure .gitattributes exists with proper line ending settings
+        if [ ! -f ".gitattributes" ]; then
+            log_info "Creating .gitattributes for line ending normalization..."
+            cat > .gitattributes << 'EOF'
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Specific file types
+*.py text eol=lf
+*.pyw text eol=lf
+*.pyx text eol=lf
+*.pyi text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
+*.md text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+Dockerfile text eol=lf
+Makefile text eol=lf
+*.mk text eol=lf
+
+# Windows specific files should keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+*.pyc binary
+*.pyo binary
+*.pyd binary
+*.so binary
+*.dll binary
+*.exe binary
+*.whl binary
+EOF
+        fi
+
+        # Refresh the Git index to fix line ending issues
+        log_info "Refreshing Git index to fix line ending issues..."
+
+        # This command tells Git to re-scan the working directory for changes
+        git add --renormalize . 2>/dev/null || true
+
+        # Reset the index without touching working tree
+        git reset 2>/dev/null || true
+
+        # Update the index to match the working tree, ignoring line ending changes
+        git update-index --refresh 2>/dev/null || true
+
+        # If there are still modified files showing, it might be actual changes
+        if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+            log_warning "Git shows modified files - these may be real changes or persistent line ending issues"
+            log_warning "Run 'git diff' to see actual changes"
         else
-            log_info "Git repository status is clean"
+            log_info "Git repository is clean"
         fi
     fi
 }

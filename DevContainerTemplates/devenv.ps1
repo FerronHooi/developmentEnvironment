@@ -187,8 +187,10 @@ $files = @(
     "devcontainer.json",
     "Dockerfile",
     "postCreateCommand.sh",
+    "fix-git-lineendings.sh",
     ".env.example",
     ".gitignore",
+    ".gitattributes",
     "capture-current-state.ps1"
 )
 
