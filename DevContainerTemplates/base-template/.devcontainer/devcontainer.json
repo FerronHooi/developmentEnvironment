@@ -70,7 +70,7 @@
         "azure.tenant": "${env:AZURE_TENANT_ID}",
         "azure.subscriptionId": "${env:AZURE_SUBSCRIPTION_ID}"
       },
-      // Extensions to install in the container (63 total)
+      // Extensions to install in the container (64 total)
       "extensions": [
         // === Data & Analytics Extensions (14) ===
         "analysis-services.tmdl",
@@ -128,7 +128,8 @@
         // === API Testing & Development (2) ===
         "postman.postman-for-vscode",
         "rangav.vscode-thunder-client",
-        // === Editor Enhancements (11) ===
+        // === Editor Enhancements (12) ===
+        "alefragnani.project-manager",
         "bierner.markdown-mermaid",
         "dineug.vuerd-vscode",
         "dionmunk.vscode-notes",
