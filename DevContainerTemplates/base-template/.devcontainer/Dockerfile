@@ -86,7 +86,8 @@ RUN npm install -g \
     vite \
     vercel \
     netlify-cli \
-    serverless
+    serverless \
+    @openai/codex
 
 # Upgrade pip and install Python build tools
 RUN python -m pip install --no-cache-dir --upgrade \
