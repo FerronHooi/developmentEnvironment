@@ -265,7 +265,7 @@ install_project_tools() {
 
 # Main execution
 main() {
-    cd ${WORKSPACE_FOLDER} || exit 1
+    cd /workspace || exit 1
 
     # Detect project characteristics
     detect_project_type

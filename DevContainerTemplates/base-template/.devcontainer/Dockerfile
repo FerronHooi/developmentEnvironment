@@ -232,8 +232,8 @@ RUN groupadd --gid $USER_GID $USERNAME && \
     usermod -aG docker $USERNAME
 
 # Create necessary directories
-RUN mkdir -p /workspaces && \
-    chown -R $USERNAME:$USERNAME /workspaces && \
+RUN mkdir -p /workspace && \
+    chown -R $USERNAME:$USERNAME /workspace && \
     mkdir -p /home/$USERNAME/.vscode-server/extensions && \
     mkdir -p /home/$USERNAME/.cache/pip && \
     mkdir -p /home/$USERNAME/.npm && \
@@ -277,12 +277,12 @@ RUN echo 'alias ll="ls -alF"' >> ~/.bashrc && \
     echo 'alias cls="clear"' >> ~/.bashrc
 
 # Set environment variables
-ENV PYTHONPATH=/workspaces:$PYTHONPATH
+ENV PYTHONPATH=/workspace:$PYTHONPATH
 ENV PATH=/home/$USERNAME/.local/bin:$PATH
 ENV SHELL=/bin/bash
 
 # Set working directory
-WORKDIR /workspaces
+WORKDIR /workspace
 
 # Default command
 CMD ["sleep", "infinity"]
