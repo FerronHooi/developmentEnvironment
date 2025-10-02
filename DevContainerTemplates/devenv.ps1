@@ -188,6 +188,7 @@ $files = @(
     "Dockerfile",
     "postCreateCommand.sh",
     "fix-git-lineendings.sh",
+    "aggressive-git-fix.sh",
     ".env.example",
     ".gitignore",
     ".gitattributes",

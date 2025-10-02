@@ -236,11 +236,11 @@
     "seccomp=unconfined"
   ],
   // Post-create command - runs once when container is created
-  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh || echo 'No post-create script found'",
+  "postCreateCommand": "bash -c 'if [ -f .devcontainer/aggressive-git-fix.sh ]; then bash .devcontainer/aggressive-git-fix.sh; fi; bash .devcontainer/postCreateCommand.sh || echo \"Post-create script completed\"'",
   // Post-start command - runs every time container starts (includes Git fix)
-  "postStartCommand": "bash -c 'echo \"Container started at $(date)\"; if [ -f .devcontainer/fix-git-lineendings.sh ]; then bash .devcontainer/fix-git-lineendings.sh; fi'",
+  "postStartCommand": "bash -c 'echo \"Container started at $(date)\"; if [ -f .devcontainer/aggressive-git-fix.sh ]; then bash .devcontainer/aggressive-git-fix.sh; fi'",
   // Post-attach command - runs after VS Code attaches
-  "postAttachCommand": "bash -c 'echo \"VS Code attached. Project: $PROJECT_NAME\"'",
+  "postAttachCommand": "bash -c 'echo \"VS Code attached. Project: ${PROJECT_NAME:-Project}\"'",
   // Update content command - for updating dependencies
   "updateContentCommand": "bash .devcontainer/updateDependencies.sh 2>/dev/null || echo 'No update script'",
   // Container user

@@ -8,17 +8,17 @@ set -e
 # Load environment variables from .env file if it exists
 if [ -f ".devcontainer/.env" ]; then
     echo "Loading environment variables from .env file..."
-    # Use export to load env vars, skipping comments and empty lines
-    while IFS='=' read -r key value; do
-        # Skip comments and empty lines
-        if [[ ! "$key" =~ ^[[:space:]]*# ]] && [[ -n "$key" ]]; then
-            # Remove leading/trailing whitespace
-            key=$(echo "$key" | xargs)
-            value=$(echo "$value" | xargs)
-            # Export the variable
+    # Use grep to filter out comments and empty lines, then export
+    grep -v '^#' .devcontainer/.env | grep -v '^$' | while IFS='=' read -r key value; do
+        if [ -n "$key" ]; then
+            # Remove quotes and whitespace
+            key="${key// /}"
+            value="${value#\"}"
+            value="${value%\"}"
             export "$key=$value"
+            echo "  Loaded: $key"
         fi
-    done < ".devcontainer/.env"
+    done 2>/dev/null || echo "  Warning: Issue loading some environment variables"
 fi
 
 echo "================================================"
