@@ -79,6 +79,24 @@ setup_git() {
             log_warning "Git name not configured. Set GIT_USER_NAME in .env or run: git config --global user.name 'Your Name'"
         fi
     fi
+
+    # Fix Git index if files appear as modified due to container filesystem differences
+    if [ -d ".git" ]; then
+        log_info "Checking Git repository status..."
+        
+        # Check if there are any changes that might be filesystem artifacts
+        if git status --porcelain | grep -q "^.M"; then
+            log_info "Detected filesystem-related Git changes, cleaning up..."
+            
+            # Reset any staged changes and refresh the index
+            git add -A 2>/dev/null || true
+            git reset --hard HEAD 2>/dev/null || true
+            
+            log_info "Git repository status cleaned up"
+        else
+            log_info "Git repository status is clean"
+        fi
+    fi
 }
 
 # Python environment setup

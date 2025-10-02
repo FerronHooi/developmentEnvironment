@@ -51,6 +51,8 @@
         "git.autofetch": true,
         "git.enableSmartCommit": true,
         "git.confirmSync": false,
+        "git.autoRepositoryDetection": true,
+        "git.ignoreRebaseWarning": true,
         // === Files to Exclude ===
         "files.exclude": {
           "**/__pycache__": true,
