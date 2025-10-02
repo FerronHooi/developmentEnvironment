@@ -194,7 +194,7 @@
     // === Cache Volumes for Performance ===
     "source=vscode-extensions-${localWorkspaceFolderBasename},target=/home/vscode/.vscode-server/extensions,type=volume",
     "source=pip-cache-${localWorkspaceFolderBasename},target=/home/vscode/.cache/pip,type=volume",
-    "source=npm-cache-${localWorkspaceFolderBasename},target=/home/vscode/.npm,type=volume",
+    "source=npm-cache-${localWorkspaceFolderBasename},target=/home/vscode/.npm,type=volume"
 
     // === Optional: Shared data directory ===
     // "source=${localEnv:DATA_PATH:${localWorkspaceFolder}/data},target=/data,type=bind,consistency=cached"
@@ -266,6 +266,6 @@
   "waitFor": "postCreateCommand",
 
   // Workspace settings
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached"
 }

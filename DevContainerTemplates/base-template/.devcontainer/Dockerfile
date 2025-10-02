@@ -232,8 +232,8 @@ RUN groupadd --gid $USER_GID $USERNAME && \
     usermod -aG docker $USERNAME
 
 # Create necessary directories
-RUN mkdir -p /workspace && \
-    chown -R $USERNAME:$USERNAME /workspace && \
+RUN mkdir -p /workspaces && \
+    chown -R $USERNAME:$USERNAME /workspaces && \
     mkdir -p /home/$USERNAME/.vscode-server/extensions && \
     mkdir -p /home/$USERNAME/.cache/pip && \
     mkdir -p /home/$USERNAME/.npm && \
@@ -250,7 +250,10 @@ RUN git config --global init.defaultBranch main && \
     git config --global pull.rebase false && \
     git config --global fetch.prune true && \
     git config --global diff.colorMoved zebra && \
-    git config --global core.editor "code --wait"
+    git config --global core.editor "code --wait" && \
+    git config --global core.autocrlf false && \
+    git config --global core.filemode false && \
+    git config --global safe.directory '*'
 
 # Install Oh My Bash for better terminal experience
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended || true
@@ -274,12 +277,12 @@ RUN echo 'alias ll="ls -alF"' >> ~/.bashrc && \
     echo 'alias cls="clear"' >> ~/.bashrc
 
 # Set environment variables
-ENV PYTHONPATH=/workspace:$PYTHONPATH
+ENV PYTHONPATH=/workspaces:$PYTHONPATH
 ENV PATH=/home/$USERNAME/.local/bin:$PATH
 ENV SHELL=/bin/bash
 
 # Set working directory
-WORKDIR /workspace
+WORKDIR /workspaces
 
 # Default command
 CMD ["sleep", "infinity"]

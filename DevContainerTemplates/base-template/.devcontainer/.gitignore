@@ -58,3 +58,8 @@ volumes/
 *.pfx
 credentials/
 secrets/
+
+# Ignore IDE specific folders (if not using VS Code settings sync)
+.vscode/
+.idea/
+.devcontainer/
