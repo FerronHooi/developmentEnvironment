@@ -1,4 +1,4 @@
-# Environment variables (contains secrets - NEVER commit these!)
+o# Environment variables (contains secrets - NEVER commit these!)
 .env
 .env.local
 .env.*.local
