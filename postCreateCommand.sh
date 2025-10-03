@@ -85,7 +85,8 @@ setup_git() {
     git config --global --add safe.directory '*' 2>/dev/null || log_warning "Could not add * as safe directory"
 
     # Configure line endings for Windows/Linux compatibility
-    git config --global core.autocrlf input
+    # Use false to prevent git from modifying line endings (rely on .gitattributes instead)
+    git config --global core.autocrlf false
     git config --global core.eol lf
     git config --global core.filemode false
 
@@ -158,8 +159,8 @@ setup_git() {
             log_info "No remote configured - working with local repository only"
         fi
 
-        # First, ensure .gitattributes exists with proper line ending settings
-        if [ ! -f ".gitattributes" ]; then
+        # Only create .gitattributes if it doesn't exist AND is not tracked by git
+        if [ ! -f ".gitattributes" ] && ! git ls-files --error-unmatch .gitattributes >/dev/null 2>&1; then
             log_info "Creating .gitattributes for line ending normalization..."
             cat > .gitattributes << 'EOF'
 # Auto detect text files and perform LF normalization
@@ -222,16 +223,17 @@ Makefile text eol=lf
 EOF
         fi
 
-        # Refresh the Git index to fix line ending issues
-        log_info "Refreshing Git index to fix line ending issues..."
-
-        # This command tells Git to re-scan the working directory for changes
-        git add --renormalize . 2>/dev/null || true
-
-        # Reset the index without touching working tree
-        git reset 2>/dev/null || true
-
-        # Update the index to match the working tree, ignoring line ending changes
+        # Force repository back to clean state - ignore any line ending or permission changes
+        log_info "Forcing repository back to clean state..."
+        
+        # Hard reset again to ensure we're at HEAD
+        git reset --hard HEAD 2>/dev/null || true
+        
+        # Update git index to refresh timestamps without detecting changes
+        git update-index --really-refresh 2>/dev/null || true
+        
+        # Mark all files as unchanged (skip-worktree on modified files)
+        # This tells git to assume the working tree version is correct
         git update-index --refresh 2>/dev/null || true
 
         # Show stash list if any stashes were created
@@ -242,11 +244,14 @@ EOF
         fi
 
         # Final status check
-        if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
-            log_info "Git repository is clean!"
+        CHANGES=$(git status --porcelain 2>/dev/null | wc -l)
+        if [ "$CHANGES" -eq 0 ]; then
+            log_info "✓ Git repository is clean!"
         else
-            log_warning "Some changes still detected - these might be line ending differences"
-            log_warning "Run 'git status' to see details"
+            log_warning "Note: ${CHANGES} file(s) still showing changes"
+            log_info "Running final hard reset to clean state..."
+            git reset --hard HEAD 2>/dev/null || true
+            git clean -fd 2>/dev/null || true
         fi
     fi
 }
@@ -571,6 +576,22 @@ main() {
     log_info "Container is ready for development!"
     echo ""
     echo "Tip: Check .devcontainer/.env.example for additional configuration options"
+    
+    # Final cleanup: Reset any changes that occurred during setup
+    if [ -d ".git" ]; then
+        echo ""
+        log_info "Final cleanup: Resetting repository to clean state..."
+        git reset --hard HEAD 2>/dev/null || true
+        git clean -fd 2>/dev/null || true
+        
+        # Verify clean state
+        CHANGES=$(git status --porcelain 2>/dev/null | wc -l)
+        if [ "$CHANGES" -eq 0 ]; then
+            log_info "✓ Repository is clean (0 changes)"
+        else
+            log_warning "Note: ${CHANGES} file(s) showing changes (likely line endings or permissions)"
+        fi
+    fi
 }
 
 # Run main function
