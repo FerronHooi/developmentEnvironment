@@ -457,12 +457,67 @@ setup_codebox() {
     fi
 }
 
+# Setup developmentEnvironment as submodule
+setup_development_submodule() {
+    log_info "Checking developmentEnvironment setup..."
+
+    # Only run if we're NOT inside the developmentEnvironment template itself
+    if [[ "$PWD" != *"developmentEnvironment"* ]] && [[ "$PWD" != *"DevContainerTemplates"* ]]; then
+
+        # Check if we're in a git repository
+        if [ -d ".git" ]; then
+
+            # Check if submodule already exists
+            if [ ! -d "developmentEnvironment" ]; then
+                log_info "Adding developmentEnvironment as submodule..."
+
+                # Add the submodule
+                git submodule add https://github.com/FerronHooi/developmentEnvironment.git 2>/dev/null || {
+                    log_warning "Could not add submodule - it may already be configured"
+                }
+
+                # Initialize and update submodule
+                git submodule update --init --recursive 2>/dev/null || {
+                    log_warning "Could not update submodule"
+                }
+
+                # Add to .gitignore if not already there
+                if [ ! -f ".gitignore" ] || ! grep -q "^/developmentEnvironment/$" .gitignore 2>/dev/null; then
+                    log_info "Adding developmentEnvironment to .gitignore..."
+                    echo "" >> .gitignore
+                    echo "# Development Environment (submodule - not tracked in project)" >> .gitignore
+                    echo "/developmentEnvironment/" >> .gitignore
+
+                    # Commit the .gitignore change
+                    git add .gitignore
+                    git commit -m "Add developmentEnvironment to .gitignore" 2>/dev/null || {
+                        log_info "Gitignore updated (commit manually if needed)"
+                    }
+                fi
+
+                log_info "developmentEnvironment submodule setup complete"
+                log_info "VS Code will use: developmentEnvironment/DevContainerTemplates/base-template/.devcontainer/"
+            else
+                log_info "developmentEnvironment submodule already exists"
+            fi
+        else
+            log_warning "Not in a git repository - skipping submodule setup"
+            log_warning "Run 'git init' first, then rebuild container to add submodule"
+        fi
+    else
+        log_info "Running inside developmentEnvironment template - skipping submodule setup"
+    fi
+}
+
 # Main execution
 main() {
     cd /workspace || exit 1
 
     # Detect project characteristics
     detect_project_type
+
+    # Setup submodule first (so paths exist for other functions)
+    setup_development_submodule
 
     # Run setup steps
     setup_git
