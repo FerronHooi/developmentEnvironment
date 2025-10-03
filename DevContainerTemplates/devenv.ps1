@@ -384,6 +384,34 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
     Write-Host "  * Git repository" -ForegroundColor White
 }
 
+# Clean up unwanted Git changes (keep only .gitignore and .gitattributes changes)
+if (Test-Path (Join-Path $ProjectPath ".git")) {
+    Write-Host ""
+    Write-Host "Cleaning up unwanted file changes..." -ForegroundColor Yellow
+
+    # Save current directory
+    $originalDir = Get-Location
+    Set-Location $ProjectPath
+
+    try {
+        # Stage the files we want to keep
+        git add .gitignore 2>$null
+        if (Test-Path .gitattributes) {
+            git add .gitattributes 2>$null
+        }
+
+        # Reset all other files to their original state
+        git checkout -- . 2>$null
+
+        Write-Host "  ✓ Reverted unwanted changes (kept .gitignore/.gitattributes)" -ForegroundColor Green
+    } catch {
+        Write-Host "  ! Could not clean up changes: $_" -ForegroundColor Yellow
+    } finally {
+        # Return to original directory
+        Set-Location $originalDir
+    }
+}
+
 # Success message
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
