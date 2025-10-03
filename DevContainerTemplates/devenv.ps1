@@ -147,9 +147,59 @@ if (-not (Test-Path $DEVELOPMENT_ENV_PATH)) {
     exit 1
 }
 
+# IMPORTANT: Update .gitignore FIRST (before copying) to prevent Git from tracking as submodule
+# This must happen before the developmentEnvironment folder exists in the project
+$gitignorePath = Join-Path -Path $ProjectPath -ChildPath ".gitignore"
+$gitignoreEntries = @(
+    "",
+    "# DevContainer and IDE files (auto-added by devenv)",
+    "developmentEnvironment/",
+    ".vscode/",
+    ".gitattributes"
+)
+
+Write-Host "Updating .gitignore first (prevents submodule tracking)..." -ForegroundColor Yellow
+
+if (Test-Path -Path $gitignorePath) {
+    # Read existing .gitignore
+    $existingContent = Get-Content -Path $gitignorePath -Raw
+
+    # Check if entries already exist
+    $needsUpdate = $false
+
+    if ($existingContent -notmatch 'developmentEnvironment/?') {
+        $needsUpdate = $true
+    }
+    if ($existingContent -notmatch '\.vscode/?') {
+        $needsUpdate = $true
+    }
+    if ($existingContent -notmatch '\.gitattributes') {
+        $needsUpdate = $true
+    }
+
+    if ($needsUpdate) {
+        # Add entries to existing .gitignore
+        $gitignoreEntries | Out-File -FilePath $gitignorePath -Append -Encoding UTF8
+        Write-Host "  Updated .gitignore:" -ForegroundColor Green
+        Write-Host "    + developmentEnvironment/" -ForegroundColor Green
+        Write-Host "    + .vscode/" -ForegroundColor Green
+        Write-Host "    + .gitattributes" -ForegroundColor Green
+    } else {
+        Write-Host "  = .gitignore already has entries" -ForegroundColor Gray
+    }
+} else {
+    # Create new .gitignore with entries
+    $gitignoreEntries | Out-File -FilePath $gitignorePath -Encoding UTF8
+    Write-Host "  Created .gitignore:" -ForegroundColor Green
+    Write-Host "    + developmentEnvironment/" -ForegroundColor Green
+    Write-Host "    + .vscode/" -ForegroundColor Green
+    Write-Host "    + .gitattributes" -ForegroundColor Green
+}
+
 # Check if developmentEnvironment already exists in target
 $targetDevEnv = Join-Path $ProjectPath "developmentEnvironment"
 if ((Test-Path $targetDevEnv) -and -not $Force) {
+    Write-Host ""
     Write-Host "WARNING: developmentEnvironment already exists!" -ForegroundColor Yellow
     Write-Host "Options:" -ForegroundColor White
     Write-Host "  Y - Overwrite (delete existing)" -ForegroundColor White
@@ -178,6 +228,7 @@ if ((Test-Path $targetDevEnv) -and -not $Force) {
 }
 
 # Copy entire developmentEnvironment folder
+Write-Host ""
 Write-Host "Copying developmentEnvironment folder..." -ForegroundColor Yellow
 try {
     # Use robocopy for efficient directory copying on Windows
@@ -235,54 +286,7 @@ if (Test-Path -Path $gitAttributesSource) {
     }
 }
 
-# Update project's .gitignore to exclude developmentEnvironment, .vscode, and .gitattributes
-$gitignorePath = Join-Path -Path $ProjectPath -ChildPath ".gitignore"
-$gitignoreEntries = @(
-    "",
-    "# DevContainer and IDE files (auto-added by devenv)",
-    "developmentEnvironment/",
-    ".vscode/",
-    ".gitattributes"
-)
-
-if (Test-Path -Path $gitignorePath) {
-    # Read existing .gitignore
-    $existingContent = Get-Content -Path $gitignorePath -Raw
-
-    # Check if entries already exist
-    $needsUpdate = $false
-    $entriesToAdd = @()
-
-    if ($existingContent -notmatch 'developmentEnvironment/?') {
-        $needsUpdate = $true
-    }
-    if ($existingContent -notmatch '\.vscode/?') {
-        $needsUpdate = $true
-    }
-    if ($existingContent -notmatch '\.gitattributes') {
-        $needsUpdate = $true
-    }
-
-    if ($needsUpdate) {
-        # Add entries to existing .gitignore
-        $gitignoreEntries | Out-File -FilePath $gitignorePath -Append -Encoding UTF8
-        Write-Host ""
-        Write-Host "Updated .gitignore:" -ForegroundColor Yellow
-        Write-Host "  + Added developmentEnvironment/" -ForegroundColor Green
-        Write-Host "  + Added .vscode/" -ForegroundColor Green
-        Write-Host "  + Added .gitattributes" -ForegroundColor Green
-    } else {
-        Write-Host "  = .gitignore already has DevContainer entries" -ForegroundColor Gray
-    }
-} else {
-    # Create new .gitignore with entries
-    $gitignoreEntries | Out-File -FilePath $gitignorePath -Encoding UTF8
-    Write-Host ""
-    Write-Host "Created .gitignore:" -ForegroundColor Yellow
-    Write-Host "  + developmentEnvironment/" -ForegroundColor Green
-    Write-Host "  + .vscode/" -ForegroundColor Green
-    Write-Host "  + .gitattributes" -ForegroundColor Green
-}
+# .gitignore was already updated before copying to prevent submodule tracking
 
 # Apply extension profile
 if ($Profile -ne "full") {
