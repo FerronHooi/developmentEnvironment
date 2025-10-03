@@ -77,11 +77,11 @@ if ($Help -or [string]::IsNullOrWhiteSpace($ProjectPath)) {
     }
 }
 
-# Get the directory where this script is located
+# Get the directory where this script is located (.devcontainer folder)
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Get the parent developmentEnvironment directory (go up from DevContainerTemplates)
-$DEVELOPMENT_ENV_PATH = Split-Path -Parent $SCRIPT_DIR
+# The .devcontainer folder IS the source we want to copy
+$DEVCONTAINER_SOURCE_PATH = $SCRIPT_DIR
 
 # Remove any quotes from the project path
 $ProjectPath = $ProjectPath.Trim('"', "'")
@@ -131,14 +131,14 @@ Write-Host "  DevEnv - Quick Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "[Project] $ProjectPath" -ForegroundColor White
-Write-Host "[Source] $DEVELOPMENT_ENV_PATH" -ForegroundColor Gray
+Write-Host "[Source] $DEVCONTAINER_SOURCE_PATH" -ForegroundColor Gray
 Write-Host "[Profile] $Profile" -ForegroundColor Gray
 Write-Host ""
 
-# Check if developmentEnvironment source exists
-if (-not (Test-Path $DEVELOPMENT_ENV_PATH)) {
-    Write-Host "ERROR: developmentEnvironment not found at: $DEVELOPMENT_ENV_PATH" -ForegroundColor Red
-    Write-Host "  This script must be in the developmentEnvironment/DevContainerTemplates folder" -ForegroundColor Yellow
+# Check if .devcontainer source exists
+if (-not (Test-Path $DEVCONTAINER_SOURCE_PATH)) {
+    Write-Host "ERROR: .devcontainer source not found at: $DEVCONTAINER_SOURCE_PATH" -ForegroundColor Red
+    Write-Host "  This script must be in the developmentEnvironment/.devcontainer folder" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Current directory: $SCRIPT_DIR" -ForegroundColor Gray
     Write-Host ""
@@ -148,12 +148,12 @@ if (-not (Test-Path $DEVELOPMENT_ENV_PATH)) {
 }
 
 # IMPORTANT: Update .gitignore FIRST (before copying) to prevent Git from tracking as submodule
-# This must happen before the developmentEnvironment folder exists in the project
+# This must happen before the .devcontainer folder exists in the project
 $gitignorePath = Join-Path -Path $ProjectPath -ChildPath ".gitignore"
 $gitignoreEntries = @(
     "",
     "# DevContainer and IDE files (auto-added by devenv)",
-    "developmentEnvironment/",
+    ".devcontainer/",
     ".vscode/",
     ".gitattributes"
 )
@@ -167,7 +167,7 @@ if (Test-Path -Path $gitignorePath) {
     # Check if entries already exist
     $needsUpdate = $false
 
-    if ($existingContent -notmatch 'developmentEnvironment/?') {
+    if ($existingContent -notmatch '\.devcontainer/?') {
         $needsUpdate = $true
     }
     if ($existingContent -notmatch '\.vscode/?') {
@@ -181,7 +181,7 @@ if (Test-Path -Path $gitignorePath) {
         # Add entries to existing .gitignore
         $gitignoreEntries | Out-File -FilePath $gitignorePath -Append -Encoding UTF8
         Write-Host "  Updated .gitignore:" -ForegroundColor Green
-        Write-Host "    + developmentEnvironment/" -ForegroundColor Green
+        Write-Host "    + .devcontainer/" -ForegroundColor Green
         Write-Host "    + .vscode/" -ForegroundColor Green
         Write-Host "    + .gitattributes" -ForegroundColor Green
     } else {
@@ -191,16 +191,16 @@ if (Test-Path -Path $gitignorePath) {
     # Create new .gitignore with entries
     $gitignoreEntries | Out-File -FilePath $gitignorePath -Encoding UTF8
     Write-Host "  Created .gitignore:" -ForegroundColor Green
-    Write-Host "    + developmentEnvironment/" -ForegroundColor Green
+    Write-Host "    + .devcontainer/" -ForegroundColor Green
     Write-Host "    + .vscode/" -ForegroundColor Green
     Write-Host "    + .gitattributes" -ForegroundColor Green
 }
 
-# Check if developmentEnvironment already exists in target
-$targetDevEnv = Join-Path $ProjectPath "developmentEnvironment"
-if ((Test-Path $targetDevEnv) -and -not $Force) {
+# Check if .devcontainer already exists in target
+$targetDevContainer = Join-Path $ProjectPath ".devcontainer"
+if ((Test-Path $targetDevContainer) -and -not $Force) {
     Write-Host ""
-    Write-Host "WARNING: developmentEnvironment already exists!" -ForegroundColor Yellow
+    Write-Host "WARNING: .devcontainer already exists!" -ForegroundColor Yellow
     Write-Host "Options:" -ForegroundColor White
     Write-Host "  Y - Overwrite (delete existing)" -ForegroundColor White
     Write-Host "  B - Backup existing and continue" -ForegroundColor White
@@ -209,13 +209,13 @@ if ((Test-Path $targetDevEnv) -and -not $Force) {
 
     switch ($response.ToUpper()) {
         'Y' {
-            Remove-Item -Recurse -Force $targetDevEnv
-            Write-Host "  Removed existing developmentEnvironment" -ForegroundColor Yellow
+            Remove-Item -Recurse -Force $targetDevContainer
+            Write-Host "  Removed existing .devcontainer" -ForegroundColor Yellow
         }
         'B' {
             $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-            $backupPath = "$targetDevEnv.backup.$timestamp"
-            Move-Item $targetDevEnv $backupPath
+            $backupPath = "$targetDevContainer.backup.$timestamp"
+            Move-Item $targetDevContainer $backupPath
             Write-Host "  Backed up to: $(Split-Path -Leaf $backupPath)" -ForegroundColor Green
         }
         default {
@@ -227,14 +227,14 @@ if ((Test-Path $targetDevEnv) -and -not $Force) {
     }
 }
 
-# Copy entire developmentEnvironment folder
+# Copy entire .devcontainer folder
 Write-Host ""
-Write-Host "Copying developmentEnvironment folder..." -ForegroundColor Yellow
+Write-Host "Copying .devcontainer folder..." -ForegroundColor Yellow
 try {
     # Use robocopy for efficient directory copying on Windows
     $robocopyArgs = @(
-        $DEVELOPMENT_ENV_PATH,
-        $targetDevEnv,
+        $DEVCONTAINER_SOURCE_PATH,
+        $targetDevContainer,
         "/E",  # Copy subdirectories, including empty ones
         "/NFL", # No file list
         "/NDL", # No directory list
@@ -252,20 +252,20 @@ try {
         throw "Robocopy failed with exit code: $($result.ExitCode)"
     }
 
-    Write-Host "  + Copied developmentEnvironment folder successfully" -ForegroundColor Green
+    Write-Host "  + Copied .devcontainer folder successfully" -ForegroundColor Green
 
     # Count what was copied
-    $copiedItems = Get-ChildItem -Path $targetDevEnv -Recurse -File | Measure-Object
+    $copiedItems = Get-ChildItem -Path $targetDevContainer -Recurse -File | Measure-Object
     Write-Host "  Copied $($copiedItems.Count) files" -ForegroundColor Cyan
 } catch {
-    Write-Host "  ! Error copying developmentEnvironment: $_" -ForegroundColor Red
+    Write-Host "  ! Error copying .devcontainer: $_" -ForegroundColor Red
     Write-Host "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit 1
 }
 
 # Copy .gitattributes to project root to fix line ending issues
-$gitAttributesSource = Join-Path -Path $targetDevEnv -ChildPath "DevContainerTemplates\base-template\project.gitattributes"
+$gitAttributesSource = Join-Path -Path $targetDevContainer -ChildPath "base-template\project.gitattributes"
 $gitAttributesDest = Join-Path -Path $ProjectPath -ChildPath ".gitattributes"
 
 if (Test-Path -Path $gitAttributesSource) {
@@ -293,7 +293,7 @@ if ($Profile -ne "full") {
     Write-Host ""
     Write-Host "Applying profile: $Profile" -ForegroundColor Yellow
 
-    $devContainerJson = Join-Path $targetDevEnv "DevContainerTemplates\base-template\.devcontainer\devcontainer.json"
+    $devContainerJson = Join-Path $targetDevContainer "base-template\.devcontainer\devcontainer.json"
     $config = Get-Content $devContainerJson -Raw | ConvertFrom-Json
 
     $extensions = switch ($Profile) {
@@ -336,9 +336,9 @@ if ($Profile -ne "full") {
 
 # Create .env file
 if ($CreateEnv) {
-    $envPath = Join-Path $targetDevEnv "DevContainerTemplates\base-template\.devcontainer\.env"
+    $envPath = Join-Path $targetDevContainer "base-template\.devcontainer\.env"
     if (-not (Test-Path $envPath)) {
-        $envExample = Join-Path $targetDevEnv "DevContainerTemplates\base-template\.devcontainer\.env.example"
+        $envExample = Join-Path $targetDevContainer "base-template\.devcontainer\.env.example"
         if (Test-Path $envExample) {
             Copy-Item $envExample $envPath
 
@@ -384,7 +384,7 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
     Write-Host "  * Git repository" -ForegroundColor White
 }
 
-# Clean up unwanted Git changes (keep only .gitignore, .gitattributes, and developmentEnvironment)
+# Clean up unwanted Git changes (keep only .gitignore and .gitattributes)
 if (Test-Path (Join-Path $ProjectPath ".git")) {
     Write-Host ""
     Write-Host "Cleaning up unwanted file changes..." -ForegroundColor Yellow
@@ -394,21 +394,16 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
     Set-Location $ProjectPath
 
     try {
-        # Stage the files/folders we want to keep
+        # Stage the files we want to keep
         git add .gitignore 2>$null
         if (Test-Path .gitattributes) {
             git add .gitattributes 2>$null
         }
-        # Add developmentEnvironment to staging to preserve it
-        git add developmentEnvironment 2>$null
 
         # Reset all other files to their original state (excluding staged files)
         git checkout -- . 2>$null
 
-        # Unstage developmentEnvironment (we don't want it committed, just preserved)
-        git reset HEAD developmentEnvironment 2>$null
-
-        Write-Host "  + Reverted unwanted changes (kept .gitignore/.gitattributes/developmentEnvironment)" -ForegroundColor Green
+        Write-Host "  + Reverted unwanted changes (kept .gitignore/.gitattributes)" -ForegroundColor Green
     } catch {
         Write-Host "  ! Could not clean up changes: $_" -ForegroundColor Yellow
     } finally {
@@ -420,7 +415,7 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
 # Success message
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  SUCCESS: developmentEnvironment deployed!" -ForegroundColor Green
+Write-Host "  SUCCESS: DevContainer deployed!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
@@ -443,7 +438,7 @@ if ($Open) {
 
 Write-Host ""
 Write-Host "  3. Configure credentials:" -ForegroundColor White
-Write-Host "     Edit: developmentEnvironment\DevContainerTemplates\base-template\.devcontainer\.env" -ForegroundColor Gray
+Write-Host "     Edit: .devcontainer\base-template\.devcontainer\.env" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "Press any key to exit..."
