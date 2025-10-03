@@ -76,31 +76,46 @@
         "servers": {
           "context7": {
             "command": "npx",
-            "args": ["-y", "@upstash/context7-mcp@latest"],
+            "args": [
+              "-y",
+              "@upstash/context7-mcp@latest"
+            ],
             "env": {}
           },
           "filesystem": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-filesystem"
+            ],
             "env": {
               "FILESYSTEM_ROOT": "/workspace"
             }
           },
           "memory": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-memory"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-memory"
+            ],
             "env": {}
           },
           "github": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-github"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-github"
+            ],
             "env": {
               "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN:}"
             }
           },
           "gitlab": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-gitlab"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-gitlab"
+            ],
             "env": {
               "GITLAB_TOKEN": "${localEnv:GITLAB_TOKEN:}",
               "GITLAB_URL": "${localEnv:GITLAB_URL:https://gitlab.com}"
@@ -108,7 +123,10 @@
           },
           "azure": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-azure"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-azure"
+            ],
             "env": {
               "AZURE_SUBSCRIPTION_ID": "${localEnv:AZURE_SUBSCRIPTION_ID:}",
               "AZURE_CLIENT_ID": "${localEnv:AZURE_CLIENT_ID:}",
@@ -118,31 +136,46 @@
           },
           "postgres": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-postgres"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-postgres"
+            ],
             "env": {
               "DATABASE_URL": "${localEnv:DATABASE_URL:}"
             }
           },
           "sqlite": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-sqlite"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-sqlite"
+            ],
             "env": {
               "SQLITE_DB_PATH": "${localWorkspaceFolder}/data/database.db"
             }
           },
           "playwright": {
             "command": "npx",
-            "args": ["-y", "@microsoft/mcp-server-playwright"],
+            "args": [
+              "-y",
+              "@microsoft/mcp-server-playwright"
+            ],
             "env": {}
           },
           "puppeteer": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-puppeteer"
+            ],
             "env": {}
           },
           "fetch": {
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-fetch"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-fetch"
+            ],
             "env": {}
           }
         }
@@ -318,8 +351,8 @@
   ],
   // Post-create command - runs once when container is created
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh || echo \"Post-create script completed\"",
-  // Post-start command - runs every time container starts
-  "postStartCommand": "echo \"Container started at $(date)\"",
+    // Post-start command - runs every time container starts
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && echo \"Container started at $(date)\"",
   // Post-attach command - runs after VS Code attaches (reset git to clean state)
   "postAttachCommand": "cd /workspace && git reset --hard HEAD 2>/dev/null && git clean -fd 2>/dev/null && echo 'VS Code attached - repository reset to clean state' || echo 'VS Code attached'",
   // Update content command - for updating dependencies
