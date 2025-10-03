@@ -408,7 +408,7 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
         # Unstage developmentEnvironment (we don't want it committed, just preserved)
         git reset HEAD developmentEnvironment 2>$null
 
-        Write-Host "  ✓ Reverted unwanted changes (kept .gitignore/.gitattributes/developmentEnvironment)" -ForegroundColor Green
+        Write-Host "  + Reverted unwanted changes (kept .gitignore/.gitattributes/developmentEnvironment)" -ForegroundColor Green
     } catch {
         Write-Host "  ! Could not clean up changes: $_" -ForegroundColor Yellow
     } finally {
