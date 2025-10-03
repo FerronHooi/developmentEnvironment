@@ -351,8 +351,8 @@
   ],
   // Post-create command - runs once when container is created
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh || echo \"Post-create script completed\"",
-  // Post-start command - runs every time container starts
-  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}/.devcontainer && git config --add safe.directory /.devcontainer && echo \"Container started at $(date)\"",
+  // Post-start command - runs every time container starts (use local config to avoid busy file error)
+  "postStartCommand": "git config --add safe.directory ${containerWorkspaceFolder}/.devcontainer && git config --add safe.directory /.devcontainer && echo \"Container started at $(date)\"",
   // Post-attach command - runs after VS Code attaches (reset git to clean state)
   "postAttachCommand": "cd /workspace && git reset --hard HEAD 2>/dev/null && git clean -fd 2>/dev/null && echo 'VS Code attached - repository reset to clean state' || echo 'VS Code attached'",
   // Update content command - for updating dependencies
