@@ -5,6 +5,15 @@
 
 set -e
 
+# Early git configuration to prevent ownership issues with nested .devcontainer git repo
+echo "Configuring git safe directories for nested repositories..."
+# The .devcontainer folder has its own git repo (GitHub) while workspace has Azure DevOps
+# Need to mark both as safe to prevent "dubious ownership" errors
+git config --global --add safe.directory /workspace 2>/dev/null || true
+git config --global --add safe.directory /workspace/.devcontainer 2>/dev/null || true
+git config --global --add safe.directory '*' 2>/dev/null || true
+echo "✓ Git safe directories configured"
+
 # Load environment variables from .env file if it exists
 if [ -f ".devcontainer/.env" ]; then
     echo "Loading environment variables from .env file..."
