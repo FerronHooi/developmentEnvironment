@@ -15,17 +15,20 @@ A comprehensive, portable DevContainer setup that preserves your VS Code configu
 ## 📁 Structure
 
 ```
-DevContainerTemplates/
-├── base-template/
-│   └── .devcontainer/
-│       ├── devcontainer.json          # Main configuration
-│       ├── Dockerfile                 # Comprehensive dev image
-│       ├── postCreateCommand.sh       # Auto-setup script
-│       ├── capture-current-state.ps1  # State capture tool
-│       ├── .env.example              # Environment template
-│       └── .gitignore                # Security exclusions
-├── deploy-to-project.ps1            # Deployment script
-└── README.md                         # This file
+.devcontainer/
+├── devcontainer.json          # Main configuration
+├── Dockerfile                 # Comprehensive dev image
+├── postCreateCommand.sh       # Auto-setup script
+├── capture-current-state.ps1  # State capture tool
+├── .env.example              # Environment template
+├── .gitignore                # Security exclusions
+├── install/
+│   ├── devenv.ps1           # Main deployment script
+│   ├── devenv.cmd           # Windows CMD wrapper
+│   ├── devenv.bat           # Windows batch wrapper
+│   ├── install-devenv.ps1   # Installation script
+│   └── README.md            # This file
+└── codebox/                 # Additional tools
 ```
 
 ## 🚀 Quick Start
@@ -33,11 +36,11 @@ DevContainerTemplates/
 ### 1. Deploy to Your Project
 
 ```powershell
-# From DevContainerTemplates directory
-.\deploy-to-project.ps1 -ProjectPath "C:\YourProject"
+# From .devcontainer/install directory
+.\devenv.ps1 "C:\YourProject"
 
 # With options
-.\deploy-to-project.ps1 -ProjectPath "C:\YourProject" -ExtensionProfile "data-science"
+.\devenv.ps1 "C:\YourProject" -Profile "data-science"
 ```
 
 ### 2. Configure Environment

@@ -1,5 +1,5 @@
 # Install DevEnv Command Globally
-# This script adds the DevContainerTemplates folder to your PATH
+# This script adds the .devcontainer/install folder to your PATH
 
 param(
     [switch]$CurrentUserOnly = $true,
@@ -18,7 +18,7 @@ $INSTALL_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Check if we're in the right place
 if (-not (Test-Path (Join-Path $INSTALL_DIR "devenv.ps1"))) {
     Write-Host "Error: devenv.ps1 not found in current directory" -ForegroundColor Red
-    Write-Host "  Please run this script from the DevContainerTemplates folder" -ForegroundColor Yellow
+    Write-Host "  Please run this script from the .devcontainer/install folder" -ForegroundColor Yellow
     exit 1
 }
 
@@ -117,7 +117,7 @@ function devenv {
     Write-Host "IMPORTANT: Restart your terminal for PATH changes to take effect" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Tips:" -ForegroundColor Cyan
-    Write-Host "  - You can move the DevContainerTemplates folder anywhere" -ForegroundColor Gray
+    Write-Host "  - You can move the .devcontainer folder anywhere" -ForegroundColor Gray
     Write-Host "  - Just run install-devenv.ps1 again after moving" -ForegroundColor Gray
     Write-Host "  - Use 'devenv -Help' to see all options" -ForegroundColor Gray
 }

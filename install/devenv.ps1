@@ -1,6 +1,6 @@
 # DevEnv - Self-locating DevContainer deployment script
 # Usage: devenv "C:\Path\To\Your\Project"
-# This script automatically finds its own location, so you can move DevContainerTemplates anywhere
+# This script automatically finds its own location, so you can move .devcontainer anywhere
 
 param(
     [Parameter(Mandatory=$false, Position=0)]
@@ -77,11 +77,11 @@ if ($Help -or [string]::IsNullOrWhiteSpace($ProjectPath)) {
     }
 }
 
-# Get the directory where this script is located (.devcontainer folder)
+# Get the directory where this script is located (install folder)
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# The .devcontainer folder IS the source we want to copy
-$DEVCONTAINER_SOURCE_PATH = $SCRIPT_DIR
+# The .devcontainer folder is the parent of install folder
+$DEVCONTAINER_SOURCE_PATH = Split-Path -Parent $SCRIPT_DIR
 
 # Remove any quotes from the project path
 $ProjectPath = $ProjectPath.Trim('"', "'")
@@ -138,7 +138,7 @@ Write-Host ""
 # Check if .devcontainer source exists
 if (-not (Test-Path $DEVCONTAINER_SOURCE_PATH)) {
     Write-Host "ERROR: .devcontainer source not found at: $DEVCONTAINER_SOURCE_PATH" -ForegroundColor Red
-    Write-Host "  This script must be in the developmentEnvironment/.devcontainer folder" -ForegroundColor Yellow
+    Write-Host "  This script must be in the .devcontainer/install folder" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Current directory: $SCRIPT_DIR" -ForegroundColor Gray
     Write-Host ""
@@ -265,7 +265,7 @@ try {
 }
 
 # Copy .gitattributes to project root to fix line ending issues
-$gitAttributesSource = Join-Path -Path $targetDevContainer -ChildPath "base-template\project.gitattributes"
+$gitAttributesSource = Join-Path -Path $DEVCONTAINER_SOURCE_PATH -ChildPath "project.gitattributes"
 $gitAttributesDest = Join-Path -Path $ProjectPath -ChildPath ".gitattributes"
 
 if (Test-Path -Path $gitAttributesSource) {
@@ -293,7 +293,7 @@ if ($Profile -ne "full") {
     Write-Host ""
     Write-Host "Applying profile: $Profile" -ForegroundColor Yellow
 
-    $devContainerJson = Join-Path $targetDevContainer "base-template\.devcontainer\devcontainer.json"
+    $devContainerJson = Join-Path $targetDevContainer "devcontainer.json"
     $config = Get-Content $devContainerJson -Raw | ConvertFrom-Json
 
     $extensions = switch ($Profile) {
@@ -336,9 +336,9 @@ if ($Profile -ne "full") {
 
 # Create .env file
 if ($CreateEnv) {
-    $envPath = Join-Path $targetDevContainer "base-template\.devcontainer\.env"
+    $envPath = Join-Path $targetDevContainer ".env"
     if (-not (Test-Path $envPath)) {
-        $envExample = Join-Path $targetDevContainer "base-template\.devcontainer\.env.example"
+        $envExample = Join-Path $targetDevContainer ".env.example"
         if (Test-Path $envExample) {
             Copy-Item $envExample $envPath
 
@@ -438,7 +438,7 @@ if ($Open) {
 
 Write-Host ""
 Write-Host "  3. Configure credentials:" -ForegroundColor White
-Write-Host "     Edit: .devcontainer\base-template\.devcontainer\.env" -ForegroundColor Gray
+Write-Host "     Edit: .devcontainer\.env" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "Press any key to exit..."

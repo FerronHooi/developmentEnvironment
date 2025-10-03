@@ -1,37 +1,65 @@
-# Test deployments
-test-projects/
-temp/
-
-# Local configurations
-local-config.json
-*.local.*
-
-# OS Files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDE files
-.idea/
-*.swp
-*.swo
-*~
-.vscode/
-.claude/
-
-# DevContainer (if someone accidentally creates one here)
-.devcontainer/
-
-# Logs
-*.log
+# Environment variables (contains secrets - NEVER commit these!)
+.env
+.env.local
+.env.*.local
 
 # Backup files
 *.backup.*
 *.bak
+*.orig
 
-# Don't ignore .env.example (it's a template)
-!.env.example
+# State capture files
+state-snapshot.json
+requirements.captured.txt
+extensions.captured.json
 
-# But ignore actual .env files
-.env
-.env.local
+# Custom local configurations
+custom-setup.sh
+local-settings.json
+local-config.json
+overrides.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# IDE specific files (if not using VS Code settings sync)
+.vscode-server/
+.vscode-test/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python cache (if running scripts locally)
+__pycache__/
+*.pyc
+*.pyo
+
+# Node modules (if installed locally for testing)
+node_modules/
+
+# Docker volumes (if mounted locally)
+volumes/
+
+# Credentials and keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+credentials/
+secrets/
+
+# Ignore IDE specific folders (if not using VS Code settings sync)
+.vscode/
+.idea/
+.devcontainer/
