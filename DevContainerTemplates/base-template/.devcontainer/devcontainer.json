@@ -71,6 +71,82 @@
         "azure.subscriptionId": "${env:AZURE_SUBSCRIPTION_ID}"
       },
       // Extensions to install in the container (64 total)
+      // MCP (Model Context Protocol) Server Configurations
+      "mcp": {
+        "servers": {
+          "context7": {
+            "command": "npx",
+            "args": ["-y", "@upstash/context7-mcp@latest"],
+            "env": {}
+          },
+          "filesystem": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+            "env": {
+              "FILESYSTEM_ROOT": "/workspace"
+            }
+          },
+          "memory": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-memory"],
+            "env": {}
+          },
+          "github": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-github"],
+            "env": {
+              "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN:}"
+            }
+          },
+          "gitlab": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-gitlab"],
+            "env": {
+              "GITLAB_TOKEN": "${localEnv:GITLAB_TOKEN:}",
+              "GITLAB_URL": "${localEnv:GITLAB_URL:https://gitlab.com}"
+            }
+          },
+          "azure": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-azure"],
+            "env": {
+              "AZURE_SUBSCRIPTION_ID": "${localEnv:AZURE_SUBSCRIPTION_ID:}",
+              "AZURE_CLIENT_ID": "${localEnv:AZURE_CLIENT_ID:}",
+              "AZURE_CLIENT_SECRET": "${localEnv:AZURE_CLIENT_SECRET:}",
+              "AZURE_TENANT_ID": "${localEnv:AZURE_TENANT_ID:}"
+            }
+          },
+          "postgres": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-postgres"],
+            "env": {
+              "DATABASE_URL": "${localEnv:DATABASE_URL:}"
+            }
+          },
+          "sqlite": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-sqlite"],
+            "env": {
+              "SQLITE_DB_PATH": "${localWorkspaceFolder}/data/database.db"
+            }
+          },
+          "playwright": {
+            "command": "npx",
+            "args": ["-y", "@microsoft/mcp-server-playwright"],
+            "env": {}
+          },
+          "puppeteer": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+            "env": {}
+          },
+          "fetch": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-fetch"],
+            "env": {}
+          }
+        }
+      },
       "extensions": [
         // === Data & Analytics Extensions (14) ===
         "analysis-services.tmdl",
@@ -147,7 +223,8 @@
         "isudox.vscode-jetbrains-keybindings",
         // === Terminal & PowerShell (2) ===
         "docter60.vscode-terminal-for-ubuntu",
-        "ms-vscode.powershell"
+        "ms-vscode.powershell",
+        "DotJoshJohnson.xml"
       ]
     }
   },
@@ -178,7 +255,11 @@
     // === Feature Flags ===
     "ENABLE_GPU": "${localEnv:ENABLE_GPU:false}",
     "ENABLE_JUPYTER": "${localEnv:ENABLE_JUPYTER:true}",
-    "ENABLE_DATABRICKS": "${localEnv:ENABLE_DATABRICKS:true}"
+    "ENABLE_DATABRICKS": "${localEnv:ENABLE_DATABRICKS:true}",
+    // === MCP Server Credentials (from .env or system) ===
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN:}",
+    "GITLAB_TOKEN": "${localEnv:GITLAB_TOKEN:}",
+    "GITLAB_URL": "${localEnv:GITLAB_URL:https://gitlab.com}"
   },
   // Mount points for credentials and configurations
   "mounts": [

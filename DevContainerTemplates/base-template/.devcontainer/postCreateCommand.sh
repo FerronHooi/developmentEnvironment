@@ -369,6 +369,94 @@ install_project_tools() {
     fi
 }
 
+# Setup MCP (Model Context Protocol) servers
+setup_mcp_servers() {
+    log_info "Setting up MCP servers..."
+
+    # Ensure npm cache is available
+    mkdir -p ~/.npm
+
+    # Pre-cache commonly used MCP servers to speed up first use
+    log_info "Pre-caching MCP server packages..."
+
+    # Context7 - Up-to-date code documentation
+    npx -y @upstash/context7-mcp@latest --version > /dev/null 2>&1 && \
+        log_info "Context7 MCP server cached" || \
+        log_warning "Failed to cache Context7 MCP server"
+
+    # Filesystem server for file operations
+    npx -y @modelcontextprotocol/server-filesystem --version > /dev/null 2>&1 && \
+        log_info "Filesystem MCP server cached" || \
+        log_warning "Failed to cache Filesystem MCP server"
+
+    # Memory server for persistent storage
+    npx -y @modelcontextprotocol/server-memory --version > /dev/null 2>&1 && \
+        log_info "Memory MCP server cached" || \
+        log_warning "Failed to cache Memory MCP server"
+
+    # GitHub server (if token is available)
+    if [ -n "${GITHUB_TOKEN}" ]; then
+        npx -y @modelcontextprotocol/server-github --version > /dev/null 2>&1 && \
+            log_info "GitHub MCP server cached" || \
+            log_warning "Failed to cache GitHub MCP server"
+    fi
+
+    # Azure server (if credentials are available)
+    if [ -n "${AZURE_TENANT_ID}" ] && [ -n "${AZURE_CLIENT_ID}" ]; then
+        npx -y @modelcontextprotocol/server-azure --version > /dev/null 2>&1 && \
+            log_info "Azure MCP server cached" || \
+            log_warning "Failed to cache Azure MCP server"
+    fi
+
+    # Create MCP configuration directory
+    mkdir -p ~/.mcp
+
+    # Create a marker file to indicate MCP is set up
+    touch ~/.mcp/.initialized
+
+    log_info "MCP servers setup complete"
+}
+
+# Setup Codebox resources
+setup_codebox() {
+    log_info "Setting up Codebox resources..."
+
+    # Check if codebox directory exists
+    if [ -d "/workspace/codebox" ]; then
+        log_info "Codebox met API tools beschikbaar"
+
+        # Make Python helpers importable
+        if [ -d "/workspace/codebox/api-tools/helpers" ]; then
+            echo "export PYTHONPATH=/workspace/codebox/api-tools/helpers:\$PYTHONPATH" >> ~/.bashrc
+            log_info "Python helpers path toegevoegd aan PYTHONPATH"
+        fi
+
+        # List available helpers
+        if [ -d "/workspace/codebox/api-tools/helpers" ]; then
+            helper_count=$(ls -1 /workspace/codebox/api-tools/helpers/*.py 2>/dev/null | wc -l)
+            if [ "$helper_count" -gt 0 ]; then
+                log_info "Gevonden: $helper_count Python helper(s)"
+            fi
+        fi
+
+        # Check for API check guide
+        if [ -f "/workspace/codebox/api-tools/api-check-guide.md" ]; then
+            log_info "API check guide beschikbaar"
+        fi
+    else
+        log_warning "Codebox directory niet gevonden"
+    fi
+
+    # Check for Claude slash commands
+    if [ -d "/workspace/.claude/commands" ]; then
+        command_count=$(ls -1 /workspace/.claude/commands/*.md 2>/dev/null | wc -l)
+        if [ "$command_count" -gt 0 ]; then
+            log_info "Claude slash commands gevonden: $command_count command(s)"
+            log_info "Gebruik /help om alle commands te zien"
+        fi
+    fi
+}
+
 # Main execution
 main() {
     cd /workspace || exit 1
@@ -382,6 +470,8 @@ main() {
     setup_python
     setup_node
     setup_azure_databricks
+    setup_mcp_servers
+    setup_codebox
     create_project_structure
     setup_vscode_settings
     install_project_tools
