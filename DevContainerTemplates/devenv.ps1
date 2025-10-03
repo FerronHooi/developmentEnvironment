@@ -384,7 +384,7 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
     Write-Host "  * Git repository" -ForegroundColor White
 }
 
-# Clean up unwanted Git changes (keep only .gitignore and .gitattributes changes)
+# Clean up unwanted Git changes (keep only .gitignore, .gitattributes, and developmentEnvironment)
 if (Test-Path (Join-Path $ProjectPath ".git")) {
     Write-Host ""
     Write-Host "Cleaning up unwanted file changes..." -ForegroundColor Yellow
@@ -394,16 +394,21 @@ if (Test-Path (Join-Path $ProjectPath ".git")) {
     Set-Location $ProjectPath
 
     try {
-        # Stage the files we want to keep
+        # Stage the files/folders we want to keep
         git add .gitignore 2>$null
         if (Test-Path .gitattributes) {
             git add .gitattributes 2>$null
         }
+        # Add developmentEnvironment to staging to preserve it
+        git add developmentEnvironment 2>$null
 
-        # Reset all other files to their original state
+        # Reset all other files to their original state (excluding staged files)
         git checkout -- . 2>$null
 
-        Write-Host "  ✓ Reverted unwanted changes (kept .gitignore/.gitattributes)" -ForegroundColor Green
+        # Unstage developmentEnvironment (we don't want it committed, just preserved)
+        git reset HEAD developmentEnvironment 2>$null
+
+        Write-Host "  ✓ Reverted unwanted changes (kept .gitignore/.gitattributes/developmentEnvironment)" -ForegroundColor Green
     } catch {
         Write-Host "  ! Could not clean up changes: $_" -ForegroundColor Yellow
     } finally {
