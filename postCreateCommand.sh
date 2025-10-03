@@ -62,21 +62,23 @@ detect_project_type() {
     fi
 }
 
-# Git configuration
+# Git configuration and repository reset
 setup_git() {
-    log_info "Configuring Git..."
+    log_info "Configuring Git and resetting repository..."
 
     # Setup credential helper
     git config --global credential.helper store
 
     # Mark workspace as safe directory to avoid ownership issues
-    git config --global --add safe.directory /workspace
-    git config --global --add safe.directory /workspace/project
-    git config --global --add safe.directory '*'
+    git config --global --add safe.directory /workspace 2>/dev/null || log_warning "Could not add /workspace as safe directory"
+    git config --global --add safe.directory /workspace/.devcontainer 2>/dev/null || log_warning "Could not add /workspace/.devcontainer as safe directory"
+    git config --global --add safe.directory /workspace/project 2>/dev/null || log_warning "Could not add /workspace/project as safe directory"
+    git config --global --add safe.directory '*' 2>/dev/null || log_warning "Could not add * as safe directory"
 
     # Configure line endings for Windows/Linux compatibility
     git config --global core.autocrlf input
     git config --global core.eol lf
+    git config --global core.filemode false
 
     # Set up Git user if not configured
     if [ -z "$(git config --global user.email)" ]; then
@@ -97,9 +99,55 @@ setup_git() {
         fi
     fi
 
-    # Fix Git index if files appear as modified due to line ending differences
+    # Reset repository to clean state and fix line ending issues
     if [ -d ".git" ]; then
-        log_info "Fixing Git line ending issues..."
+        log_info "Resetting repository to clean state..."
+
+        # Get current branch name
+        CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "master")
+        log_info "Current branch: $CURRENT_BRANCH"
+
+        # Stash any uncommitted changes (in case they're important)
+        if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+            log_warning "Uncommitted changes detected - stashing them..."
+            git stash push -m "Auto-stash by devcontainer on $(date)" --include-untracked 2>/dev/null || log_warning "Failed to stash changes"
+        fi
+
+        # Discard all local changes (both staged and unstaged)
+        log_info "Discarding all local changes..."
+        git reset --hard HEAD 2>/dev/null || log_warning "Failed to reset to HEAD"
+
+        # Clean untracked files and directories
+        log_info "Removing untracked files and directories..."
+        git clean -fd 2>/dev/null || log_warning "Failed to clean untracked files"
+
+        # Remove any ignored files that might cause issues (but preserve important ones)
+        log_info "Cleaning ignored files (preserving .env and node_modules)..."
+        git clean -fXd \
+            --exclude=.env \
+            --exclude=.env.local \
+            --exclude=node_modules \
+            --exclude=.venv \
+            --exclude=venv \
+            --exclude=__pycache__ \
+            2>/dev/null || log_warning "Failed to clean some ignored files"
+
+        # Fetch latest from remote (if connected)
+        if git remote -v 2>/dev/null | grep -q origin; then
+            log_info "Fetching latest from remote..."
+            git fetch origin --prune 2>/dev/null && log_info "Remote fetch successful" || log_warning "Could not fetch from remote (might be offline)"
+
+            # Check if current branch exists on remote
+            if git ls-remote --heads origin "$CURRENT_BRANCH" 2>/dev/null | grep -q "$CURRENT_BRANCH"; then
+                # Reset to match remote branch exactly
+                log_info "Resetting branch to match origin/$CURRENT_BRANCH..."
+                git reset --hard "origin/$CURRENT_BRANCH" 2>/dev/null && log_info "Branch reset to remote state" || log_warning "Could not reset to remote branch"
+            else
+                log_info "Branch '$CURRENT_BRANCH' is local-only"
+            fi
+        else
+            log_info "No remote configured - working with local repository only"
+        fi
 
         # First, ensure .gitattributes exists with proper line ending settings
         if [ ! -f ".gitattributes" ]; then
@@ -177,12 +225,19 @@ EOF
         # Update the index to match the working tree, ignoring line ending changes
         git update-index --refresh 2>/dev/null || true
 
-        # If there are still modified files showing, it might be actual changes
-        if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-            log_warning "Git shows modified files - these may be real changes or persistent line ending issues"
-            log_warning "Run 'git diff' to see actual changes"
+        # Show stash list if any stashes were created
+        STASH_COUNT=$(git stash list 2>/dev/null | wc -l)
+        if [ "$STASH_COUNT" -gt 0 ]; then
+            log_info "Stashed changes available: $STASH_COUNT stash(es)"
+            log_info "Use 'git stash list' to view or 'git stash pop' to restore"
+        fi
+
+        # Final status check
+        if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+            log_info "Git repository is clean!"
         else
-            log_info "Git repository is clean"
+            log_warning "Some changes still detected - these might be line ending differences"
+            log_warning "Run 'git status' to see details"
         fi
     fi
 }

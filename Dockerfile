@@ -246,6 +246,11 @@ RUN mkdir -p /workspace && \
 USER $USERNAME
 WORKDIR /home/$USERNAME
 
+# Ensure git config directory exists with proper permissions
+RUN mkdir -p /home/$USERNAME/.config/git && \
+    touch /home/$USERNAME/.gitconfig && \
+    chmod 644 /home/$USERNAME/.gitconfig
+
 # Configure git defaults (will be overridden by mounted .gitconfig)
 RUN git config --global init.defaultBranch main && \
     git config --global pull.rebase false && \
@@ -254,7 +259,9 @@ RUN git config --global init.defaultBranch main && \
     git config --global core.editor "code --wait" && \
     git config --global core.autocrlf false && \
     git config --global core.filemode false && \
-    git config --global safe.directory '*'
+    git config --global safe.directory '*' && \
+    git config --global safe.directory /workspace && \
+    git config --global safe.directory /workspace/.devcontainer
 
 # Install Oh My Bash for better terminal experience
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended || true
